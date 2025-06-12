@@ -1,0 +1,114 @@
+// This code is created for Arduino IDE in C++ by Mikeytronics
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET     -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+const int EKG_PIN = A0;
+const int POT_PIN = A1;
+
+#define MAX_SAMPLES SCREEN_WIDTH
+int ekgBuffer[MAX_SAMPLES];
+int xPos = 0;
+
+unsigned long lastBeatTime = 0;
+int bpm = 0;
+bool beatDetected = false;
+bool drawHeart = false;
+
+const int signalMin = 0;
+const int signalMax = 1023;
+
+const int graphTop = 10;   // Y = 10
+const int graphBottom = 45; // Y = 45
+const int graphHeight = graphBottom - graphTop;
+
+const unsigned long beatDelay = 300; // Minimum time between beats (ms)
+
+void drawHeartIcon(bool filled) {
+  int x = 112;
+  int y = 0;
+
+  if (filled) {
+    display.fillCircle(x + 4, y + 4, 3, WHITE);
+    display.fillCircle(x + 10, y + 4, 3, WHITE);
+    display.fillTriangle(x + 1, y + 6, x + 13, y + 6, x + 7, y + 15, WHITE);
+  } else {
+    display.drawCircle(x + 4, y + 4, 3, WHITE);
+    display.drawCircle(x + 10, y + 4, 3, WHITE);
+    display.drawTriangle(x + 1, y + 6, x + 13, y + 6, x + 7, y + 15, WHITE);
+  }
+}
+
+void setup() {
+  Serial.begin(9600);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("OLED not found");
+    while (1);
+  }
+
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("EKG Monitor Init...");
+  display.display();
+  delay(1000);
+  display.clearDisplay();
+}
+
+void loop() {
+  int rawSignal = analogRead(EKG_PIN);
+  int potVal = analogRead(POT_PIN);
+
+  // Threshold adjusted via potentiometer (range 450–600 recommended)
+  int threshold = map(potVal, 0, 1023, 450, 600);
+
+  // Scale EKG signal to fit between graphTop and graphBottom
+  float normalized = (float)(rawSignal - signalMin) / (signalMax - signalMin);
+  int scaledY = constrain(graphBottom - (int)(normalized * graphHeight), graphTop, graphBottom);
+
+  ekgBuffer[xPos] = scaledY;
+
+  // Beat detection (rising edge above threshold)
+  unsigned long now = millis();
+  if (rawSignal > threshold && !beatDetected && (now - lastBeatTime > beatDelay)) {
+    bpm = 60000 / (now - lastBeatTime);
+    lastBeatTime = now;
+    beatDetected = true;
+    drawHeart = true;
+  }
+  if (rawSignal < threshold) {
+    beatDetected = false;
+  }
+
+  // Draw screen
+  display.clearDisplay();
+
+  // Display BPM and Threshold
+  display.setCursor(0, 0);
+  display.print("BPM: ");
+  display.print(bpm);
+  display.setCursor(60, 0);
+  display.print("THR: ");
+  display.print(threshold);
+
+  drawHeartIcon(drawHeart);
+  drawHeart = false;
+
+  // Plot waveform
+  for (int i = 1; i < SCREEN_WIDTH; i++) {
+    int prev = (xPos + i - 1) % MAX_SAMPLES;
+    int curr = (xPos + i) % MAX_SAMPLES;
+    display.drawLine(i - 1, ekgBuffer[prev], i, ekgBuffer[curr], WHITE);
+  }
+
+  display.display();
+
+  xPos = (xPos + 1) % MAX_SAMPLES;
+  delay(20); // adjust speed of scroll
+}
