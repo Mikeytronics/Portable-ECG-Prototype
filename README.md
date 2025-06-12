@@ -10,7 +10,7 @@ A portable Arduino-based ECG monitor
 - External USB-C port for code updates
 
 ## 🎥 Demo
-[Watch the video here](https://youtu.be/your_video_link)
+[Watch the video here](https://youtube.com/shorts/o9CAp9mGv5c)
 
 ## 📦 Bill of Materials
 - PLA Filament (Grey)
