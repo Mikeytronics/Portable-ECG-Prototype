@@ -1,6 +1,6 @@
 # Portable-ECG-Prototype
 ## 🔍 Overview
-A portable Arduino-based ECG monitor that features a Sparkfun AD8232 Heart Monitor, , and 2 potentiometers.
+A portable Arduino-based ECG monitor
 
 ## 🛠️ Features
 - Custom designed and 3D printed case and cover
@@ -25,7 +25,7 @@ A portable Arduino-based ECG monitor that features a Sparkfun AD8232 Heart Monit
 - 3 pin auxillary connector with electrodes
 
 ## 🧠 How It Works
-Explain basic architecture. Diagrams and flowcharts help.
+The Arduino powers the OLED, potentiometers, and the heart monitor sensor. The biosignal is picked up through the properly placed electrodes, filtered by the sensor, and sent to the Arduino as an analog signal. The Arduino also recieves analog signals from the potentiometers. It then creates a display that allows the user to view and adjust the signal display like an oscilloscope.
 
 ## 🖼️ Images
 Include `.png`/`.jpg` in the `/images` folder and embed them here.
